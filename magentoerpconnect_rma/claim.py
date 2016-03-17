@@ -505,6 +505,7 @@ class CrmClaimImport(MagentoImportSynchronizer):
             return True
         return False
 
+
 @magento
 class ClaimCommentBatchImport(DelayedBatchImport):
     """ Import the Magento Claim Comments from a date.
@@ -731,9 +732,10 @@ class CrmClaimImportMapper(ImportMapper):
             [['name', '=', record['order_increment_id']]])
         if order_ids:
             ref = 'sale.order,' + str(order_ids[0])
-            invoice_ids = self.session.search(
-                'account.invoice',
-                [['sale_ids', 'in', order_ids]])
+            invoice_ids = self.session.search('account.invoice', [
+                ('sale_ids', 'in', order_ids),
+                ('type', '=', 'out_invoice'),
+                ])
             order = self.session.browse('sale.order', order_ids[0])
             return {
                 'ref': ref,
@@ -746,7 +748,7 @@ class CrmClaimImportMapper(ImportMapper):
         sess = self.session
         model_data_obj = sess.pool['ir.model.data']
         __, stage_id = model_data_obj.get_object_reference(
-                    sess.cr, sess.uid, 'crm_claim', 'stage_claim1')
+            sess.cr, sess.uid, 'crm_claim', 'stage_claim1')
         return {'stage_id': stage_id}
 
     @mapping
