@@ -152,10 +152,12 @@ class MagentoCRUDAdapter(CRUDAdapter):
     def _call(self, method, arguments):
         try:
             custom_url = self.magento.use_custom_api_path
+            protocol = 'rest' if self.magento.version == '2.0' else 'xmlrpc'
             _logger.debug("Start calling Magento api %s", method)
             with magentolib.API(self.magento.location,
                                 self.magento.username,
                                 self.magento.password,
+                                protocol=protocol,
                                 full_url=custom_url) as api:
                 # When Magento is installed on PHP 5.4+, the API
                 # may return garble data if the arguments contain
