@@ -211,6 +211,11 @@ class GenericAdapter(MagentoCRUDAdapter):
 
         :rtype: list
         """
+        if self.magento.version == '2.0':
+            if filters:
+                raise NotImplementedError
+            res = self._call(self._magento2_model, {'fields': 'id'})
+            return [item['id'] for item in res]
         return self._call('%s.search' % self._magento_model,
                           [filters] if filters else [{}])
 
