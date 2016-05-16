@@ -78,12 +78,13 @@ def output_recorder(filename):
 
 class MagentoLocation(object):
 
-    def __init__(self, location, username, password,
+    def __init__(self, location, username, password, version,
                  use_custom_api_path=False):
         self._location = location
         self.username = username
         self.password = password
         self.use_custom_api_path = use_custom_api_path
+        self.version = version
 
         self.use_auth_basic = False
         self.auth_basic_username = None
@@ -116,6 +117,7 @@ class MagentoCRUDAdapter(CRUDAdapter):
             backend.location,
             backend.username,
             backend.password,
+            backend.version,
             use_custom_api_path=backend.use_custom_api_path)
         if backend.use_auth_basic:
             magento.use_auth_basic = True
