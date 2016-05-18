@@ -34,7 +34,7 @@ from .unit.import_synchronizer import (import_batch,
                                        )
 from .partner import partner_import_batch
 from .sale import sale_order_import_batch
-from .backend import magento
+from .backend import magento, magento2000
 from .connector import add_checkpoint
 
 _logger = logging.getLogger(__name__)
@@ -605,6 +605,7 @@ class WebsiteAdapter(GenericAdapter):
 class StoreAdapter(GenericAdapter):
     _model_name = 'magento.store'
     _magento_model = 'ol_groups'
+    _magento2_model = 'store/storeGroups'
     _admin_path = 'system_store/editGroup/group_id/{id}'
 
 
@@ -612,7 +613,25 @@ class StoreAdapter(GenericAdapter):
 class StoreviewAdapter(GenericAdapter):
     _model_name = 'magento.storeview'
     _magento_model = 'ol_storeviews'
+    _magento2_model = 'store/storeConfigs'
     _admin_path = 'system_store/editStore/store_id/{id}'
+
+    def read(self, id, attributes=None):
+        """ Conveniently split into two separate APIs in 2.0
+
+        :rtype: dict
+        """
+        if self.magento.version == '2.0':
+            if attributes:
+                raise NotImplementedError
+            storeview = next(
+                record for record in self._call('store/storeViews')
+                if record['id'] == id)
+            storeview.update(next(
+                record for record in self._call('store/storeConfigs')
+                if record['id'] == id))
+            return storeview
+        return super(StoreviewAdapter, self).read(id, attributes=attributes)
 
 
 @magento
@@ -682,6 +701,16 @@ class StoreviewImportMapper(ImportMapper):
     def store_id(self, record):
         binder = self.binder_for(model='magento.store')
         binding_id = binder.to_openerp(record['group_id'])
+        return {'store_id': binding_id}
+
+
+@magento2000
+class StoreviewImportMapper(StoreviewImportMapper):
+
+    @mapping
+    def store_id(self, record):
+        binder = self.binder_for(model='magento.store')
+        binding_id = binder.to_openerp(record['store_group_id'])
         return {'store_id': binding_id}
 
 

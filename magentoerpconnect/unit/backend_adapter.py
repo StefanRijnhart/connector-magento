@@ -151,7 +151,8 @@ class MagentoCRUDAdapter(CRUDAdapter):
         """ Delete a record on the external system """
         raise NotImplementedError
 
-    def _call(self, method, arguments):
+    def _call(self, method, arguments=None):
+        print method, arguments
         try:
             custom_url = self.magento.use_custom_api_path
             protocol = 'rest' if self.magento.version == '2.0' else 'xmlrpc'
@@ -203,11 +204,17 @@ class GenericAdapter(MagentoCRUDAdapter):
 
     _model_name = None
     _magento_model = None
+    _magento2_model = None
+    _magento2_key = None
     _admin_path = None
 
     def search(self, filters=None):
         """ Search records according to some criterias
-        and returns a list of ids
+        and returns a list of ids.
+
+        2.0: query the resource to return the 'id' field for all records.
+        Filter out the 0, which designates the global score for websites,
+        store groups and store views.
 
         :rtype: list
         """
@@ -215,7 +222,7 @@ class GenericAdapter(MagentoCRUDAdapter):
             if filters:
                 raise NotImplementedError
             res = self._call(self._magento2_model, {'fields': 'id'})
-            return [item['id'] for item in res]
+            return [item['id'] for item in res if item['id'] != 0]
         return self._call('%s.search' % self._magento_model,
                           [filters] if filters else [{}])
 
@@ -224,6 +231,15 @@ class GenericAdapter(MagentoCRUDAdapter):
 
         :rtype: dict
         """
+        if self.magento.version == '2.0':
+            if attributes:
+                raise NotImplementedError
+            if self._magento2_key == 'id':
+                return self._call('%s/%s' % (self._magento2_model, id))
+            else:
+                res = self._call(self._magento2_model)
+                return next(record for record in res if record['id'] == id)
+
         arguments = [int(id)]
         if attributes:
             # Avoid to pass Null values in attributes. Workaround for
