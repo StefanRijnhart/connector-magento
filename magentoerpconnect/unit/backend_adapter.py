@@ -223,8 +223,14 @@ class GenericAdapter(MagentoCRUDAdapter):
         res = {}
         count = 0
         expr = 'searchCriteria[filter_groups][%s][filters][0][%s]'
+        # http://devdocs.magento.com/guides/v2.0/howdoi/webapi/\
+        #    search-criteria.html
+        operators = [
+            'eq', 'finset', 'from', 'gt', 'gteq', 'in', 'like', 'lt',
+            'lteq', 'moreq', 'neq', 'nin', 'notnull', 'null', 'to']
         for field in filters.keys():
             for op in filters[field].keys():
+                assert op in operators
                 value = filters[field][op]
                 if isinstance(value, (list, set)):
                     value = ','.join([unicode(v) for v in value])
