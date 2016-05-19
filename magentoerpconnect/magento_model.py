@@ -623,7 +623,7 @@ class StoreviewAdapter(GenericAdapter):
         """
         if self.magento.version == '2.0':
             if attributes:
-                raise NotImplementedError
+                raise NotImplementedError  # TODO
             storeview = next(
                 record for record in self._call('store/storeViews')
                 if record['id'] == id)

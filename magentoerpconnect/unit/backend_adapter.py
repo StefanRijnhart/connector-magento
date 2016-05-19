@@ -214,8 +214,9 @@ class GenericAdapter(MagentoCRUDAdapter):
         and returns a list of ids.
 
         2.0: query the resource to return the 'id' field for all records.
-        Filter out the 0, which designates the global score for websites,
-        store groups and store views.
+        Filter out the 0, which designates a magic value, such as the global
+        scope for websites, store groups and store views, or the category for
+        customers that have not yet logged in.
         Always pass 'searchCriteria' as it is required when it is allowed,
         but harmless otherwise (working hypothesis). However, passing 'fields'
         when a method does not take it (which is undocumented) breaks things.
