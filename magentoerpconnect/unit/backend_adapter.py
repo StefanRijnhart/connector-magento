@@ -152,7 +152,6 @@ class MagentoCRUDAdapter(CRUDAdapter):
         raise NotImplementedError
 
     def _call(self, method, arguments=None):
-        print method, arguments
         try:
             custom_url = self.magento.use_custom_api_path
             protocol = 'rest' if self.magento.version == '2.0' else 'xmlrpc'
@@ -246,12 +245,9 @@ class GenericAdapter(MagentoCRUDAdapter):
         Filter out the 0, which designates a magic value, such as the global
         scope for websites, store groups and store views, or the category for
         customers that have not yet logged in.
-        Always pass 'searchCriteria' as it is required when it is allowed,
-        but harmless otherwise (working hypothesis). However, passing 'fields'
-        when a method does not take it (which is undocumented) breaks things.
 
-        /search APIs presumably return a top level 'items' key in the result
-        dictionary.
+        /search APIs return a dictionary with a top level 'items' key.
+        Repository APIs return a list of items.
 
         :rtype: list
         """
@@ -262,12 +258,12 @@ class GenericAdapter(MagentoCRUDAdapter):
                 params.update(self.get_searchCriteria(filters))
             else:
                 if filters:
-                    raise NotImplementedError
+                    raise NotImplementedError  # Unexpected much?
                 params['fields'] = 'id'
             res = self._call(
                 self._magento2_search or self._magento2_model,
                 params)
-            if 'items' in res:  # hypothesis: in case of a /search suffix?
+            if 'items' in res:
                 res = res['items'] or []
             return [item['id'] for item in res if item['id'] != 0]
 
