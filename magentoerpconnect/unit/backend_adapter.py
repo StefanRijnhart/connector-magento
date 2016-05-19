@@ -286,7 +286,8 @@ class GenericAdapter(MagentoCRUDAdapter):
             if attributes:
                 raise NotImplementedError
             if self._magento2_key == 'id':
-                return self._call('%s/%s' % (self._magento2_model, id))
+                return self._call('%s/%s' % (self._magento2_model, id),
+                                  attributes)
             else:
                 res = self._call(self._magento2_model)
                 return next(record for record in res if record['id'] == id)

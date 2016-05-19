@@ -263,7 +263,7 @@ class PartnerImportMapper(ImportMapper):
     def names(self, record):
         # TODO create a glue module for base_surname
         parts = [part for part in (record['firstname'],
-                                   record['middlename'],
+                                   record.get('middlename'),
                                    record['lastname']) if part]
         return {'name': ' '.join(parts)}
 
