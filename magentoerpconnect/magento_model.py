@@ -713,6 +713,11 @@ class StoreviewImportMapper(StoreviewImportMapper):
         binding_id = binder.to_openerp(record['store_group_id'])
         return {'store_id': binding_id}
 
+    @mapping
+    def lang_id(self, record):
+        lang = self.env['res.lang'].search([('code', '=', record['locale'])])
+        return {'lang_id': lang.id}
+
 
 @magento
 class StoreImporter(MagentoImporter):
