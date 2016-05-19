@@ -699,19 +699,15 @@ class StoreviewImportMapper(ImportMapper):
 
     @mapping
     def store_id(self, record):
+        """ The field name changed to 'store_group_id' in 2.0 """
         binder = self.binder_for(model='magento.store')
-        binding_id = binder.to_openerp(record['group_id'])
+        group_id = record.get('store_group_id') or record['group_id']
+        binding_id = binder.to_openerp(group_id)
         return {'store_id': binding_id}
 
 
 @magento2000
 class StoreviewImportMapper(StoreviewImportMapper):
-
-    @mapping
-    def store_id(self, record):
-        binder = self.binder_for(model='magento.store')
-        binding_id = binder.to_openerp(record['store_group_id'])
-        return {'store_id': binding_id}
 
     @mapping
     def lang_id(self, record):

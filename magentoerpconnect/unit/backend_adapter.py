@@ -205,6 +205,7 @@ class GenericAdapter(MagentoCRUDAdapter):
     _model_name = None
     _magento_model = None
     _magento2_model = None
+    _magento2_search = None
     _magento2_key = None
     _admin_path = None
 
@@ -215,13 +216,23 @@ class GenericAdapter(MagentoCRUDAdapter):
         2.0: query the resource to return the 'id' field for all records.
         Filter out the 0, which designates the global score for websites,
         store groups and store views.
+        Always pass 'searchCriteria' as it is required when it is allowed,
+        but harmless otherwise (working hypothesis). However, passing 'fields'
+        when a method does not take it (which is undocumented) breaks things.
 
         :rtype: list
         """
         if self.magento.version == '2.0':
             if filters:
-                raise NotImplementedError
-            res = self._call(self._magento2_model, {'fields': 'id'})
+                raise NotImplementedError  # TODO
+            params = {'searchCriteria': ''}
+            if not self._magento2_search:
+                params['fields'] = 'id'
+            res = self._call(
+                self._magento2_search or self._magento2_model,
+                params)
+            if 'items' in res:  # hypothesis: in case of a /search suffix?
+                res = res['items']
             return [item['id'] for item in res if item['id'] != 0]
         return self._call('%s.search' % self._magento_model,
                           [filters] if filters else [{}])
