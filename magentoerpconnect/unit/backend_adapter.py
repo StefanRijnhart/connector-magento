@@ -209,6 +209,35 @@ class GenericAdapter(MagentoCRUDAdapter):
     _magento2_key = None
     _admin_path = None
 
+    @staticmethod
+    def get_searchCriteria(filters):
+        """ Craft Magento 2.0 searchCriteria from filters, for example:
+
+        'searchCriteria[filter_groups][0][filters][0][field]': 'website_id',
+        'searchCriteria[filter_groups][0][filters][0][value]': '1,2',
+        'searchCriteria[filter_groups][0][filters][0][condition_type]': 'in',
+
+        Presumably, filter_groups are joined with AND, while filters in the
+        same group are joined with OR (not supported here).
+        """
+        filters = filters or {}
+        res = {}
+        count = 0
+        expr = 'searchCriteria[filter_groups][%s][filters][0][%s]'
+        for field in filters.keys():
+            for op in filters[field].keys():
+                value = filters[field][op]
+                if isinstance(value, (list, set)):
+                    value = ','.join([unicode(v) for v in value])
+                res.update({
+                    expr % (count, 'field'): field,
+                    expr % (count, 'condition_type'): op,
+                    expr % (count, 'value'): value,
+                })
+                count += 1
+        _logger.debug('searchCriteria %s from %s', res, filters)
+        return res if res else {'searchCriteria': ''}
+
     def search(self, filters=None):
         """ Search records according to some criterias
         and returns a list of ids.
@@ -221,20 +250,28 @@ class GenericAdapter(MagentoCRUDAdapter):
         but harmless otherwise (working hypothesis). However, passing 'fields'
         when a method does not take it (which is undocumented) breaks things.
 
+        /search APIs presumably return a top level 'items' key in the result
+        dictionary.
+
         :rtype: list
         """
         if self.magento.version == '2.0':
-            if filters:
-                raise NotImplementedError  # TODO
-            params = {'searchCriteria': ''}
-            if not self._magento2_search:
+            params = {}
+            if self._magento2_search:
+                params['fields'] = 'items[id]'
+                params.update(self.get_searchCriteria(filters))
+            else:
+                if filters:
+                    raise NotImplementedError
                 params['fields'] = 'id'
             res = self._call(
                 self._magento2_search or self._magento2_model,
                 params)
             if 'items' in res:  # hypothesis: in case of a /search suffix?
-                res = res['items']
+                res = res['items'] or []
             return [item['id'] for item in res if item['id'] != 0]
+
+        # 1.x
         return self._call('%s.search' % self._magento_model,
                           [filters] if filters else [{}])
 
