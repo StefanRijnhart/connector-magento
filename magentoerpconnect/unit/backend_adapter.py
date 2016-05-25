@@ -271,7 +271,8 @@ class GenericAdapter(MagentoCRUDAdapter):
                 params)
             if 'items' in res:
                 res = res['items'] or []
-            return [item['id'] for item in res if item['id'] != 0]
+                return [item['id'] for item in res if item['id'] != 0]
+            return res
 
         # 1.x
         return self._call('%s.search' % self._magento_model,
@@ -309,6 +310,18 @@ class GenericAdapter(MagentoCRUDAdapter):
     def search_read(self, filters=None):
         """ Search records according to some criterias
         and returns their information"""
+        if self.magento.version == '2.0':
+            params = {}
+            if self._magento2_search:
+                params.update(self.get_searchCriteria(filters))
+            else:
+                if filters:
+                    raise NotImplementedError  # Unexpected much?
+            res = self._call(
+                self._magento2_search or self._magento2_model,
+                params)
+            return res
+
         return self._call('%s.list' % self._magento_model, [filters])
 
     def create(self, data):
