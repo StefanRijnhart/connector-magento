@@ -266,9 +266,7 @@ class ProductProductAdapter(GenericAdapter):
         return self._call('ol_catalog_product.update',
                           [int(id), data, storeview_id, 'id'])
 
-    def get_images(self, id, storeview_id=None):
-        if self.magento.version == '2.0':
-            raise NotImplementedError  # TODO
+    def get_images(self, id, storeview_id=None, data=None):
         return self._call('product_media.list', [int(id), storeview_id, 'id'])
 
     def read_image(self, id, image_name, storeview_id=None):
@@ -283,6 +281,16 @@ class ProductProductAdapter(GenericAdapter):
         # product_stock.update is too slow
         return self._call('oerp_cataloginventory_stock_item.update',
                           [int(id), data])
+
+
+@magento2000
+class ProductProductAdapter2000(ProductProductAdapter):
+
+    def get_images(self, id, storeview_id=None, data=None):
+        assert data
+        return (entry for entry in
+                data.get('media_gallery_entries', [])
+                if entry['media_type'] == 'image')
 
 
 @magento
@@ -321,8 +329,9 @@ class CatalogImageImporter(Importer):
     _model_name = ['magento.product.product',
                    ]
 
-    def _get_images(self, storeview_id=None):
-        return self.backend_adapter.get_images(self.magento_id, storeview_id)
+    def _get_images(self, storeview_id=None, data=None):
+        return self.backend_adapter.get_images(
+            self.magento_id, storeview_id, data=data)
 
     def _sort_images(self, images):
         """ Returns a list of images sorted by their priority.
@@ -375,9 +384,9 @@ class CatalogImageImporter(Importer):
         binding = model.browse(binding_id)
         binding.write({'image': base64.b64encode(binary)})
 
-    def run(self, magento_id, binding_id):
+    def run(self, magento_id, binding_id, data=None):
         self.magento_id = magento_id
-        images = self._get_images()
+        images = self._get_images(data=data)
         images = self._sort_images(images)
         binary = None
         image_data = None
@@ -621,7 +630,8 @@ class ProductImporter(MagentoImporter):
         translation_importer.run(self.magento_id, binding.id,
                                  mapper_class=ProductImportMapper)
         image_importer = self.unit_for(CatalogImageImporter)
-        image_importer.run(self.magento_id, binding.id)
+        image_importer.run(self.magento_id, binding.id,
+                           data=self.magento_record)
 
         if self.magento_record['type_id'] == 'bundle':
             bundle_importer = self.unit_for(BundleImporter)
