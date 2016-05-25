@@ -245,9 +245,9 @@ class GenericAdapter(MagentoCRUDAdapter):
 
     def search(self, filters=None):
         """ Search records according to some criterias
-        and returns a list of ids.
+        and returns a list of unique identifiers.
 
-        2.0: query the resource to return the 'id' field for all records.
+        2.0: query the resource to return the key field for all records.
         Filter out the 0, which designates a magic value, such as the global
         scope for websites, store groups and store views, or the category for
         customers that have not yet logged in.
@@ -258,21 +258,21 @@ class GenericAdapter(MagentoCRUDAdapter):
         :rtype: list
         """
         if self.magento.version == '2.0':
+            key = self._magento2_key or 'id'
             params = {}
             if self._magento2_search:
-                params['fields'] = 'items[id]'
+                params['fields'] = 'items[%s]' % key
                 params.update(self.get_searchCriteria(filters))
             else:
+                params['fields'] = key
                 if filters:
                     raise NotImplementedError  # Unexpected much?
-                params['fields'] = 'id'
             res = self._call(
                 self._magento2_search or self._magento2_model,
                 params)
             if 'items' in res:
                 res = res['items'] or []
-                return [item['id'] for item in res if item['id'] != 0]
-            return res
+            return [item[key] for item in res if item[key] != 0]
 
         # 1.x
         return self._call('%s.search' % self._magento_model,
@@ -286,7 +286,7 @@ class GenericAdapter(MagentoCRUDAdapter):
         if self.magento.version == '2.0':
             if attributes:
                 raise NotImplementedError
-            if self._magento2_key == 'id':
+            if self._magento2_key:
                 return self._call('%s/%s' % (self._magento2_model, id),
                                   attributes)
             else:

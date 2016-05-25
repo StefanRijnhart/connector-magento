@@ -439,7 +439,7 @@ class PartnerAddressBook(ConnectorUnit):
 
 
 @magento2000
-class PartnerAddressBook(PartnerAddressBook):
+class PartnerAddressBook2000(PartnerAddressBook):
 
     def _read_addresses(self, magento_partner_id):
         """ Address repository cannot be queried, but the addresses are

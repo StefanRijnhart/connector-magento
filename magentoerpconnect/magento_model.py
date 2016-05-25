@@ -707,7 +707,7 @@ class StoreviewImportMapper(ImportMapper):
 
 
 @magento2000
-class StoreviewImportMapper(StoreviewImportMapper):
+class StoreviewImportMapper2000(StoreviewImportMapper):
 
     @mapping
     def lang_id(self, record):

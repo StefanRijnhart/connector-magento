@@ -49,7 +49,7 @@ from .unit.import_synchronizer import (DelayedBatchImporter,
                                        AddCheckpoint,
                                        )
 from .connector import get_environment
-from .backend import magento
+from .backend import magento, magento2000
 from .related_action import unwrap_binding
 
 _logger = logging.getLogger(__name__)
@@ -203,6 +203,9 @@ class ProductProduct(models.Model):
 class ProductProductAdapter(GenericAdapter):
     _model_name = 'magento.product.product'
     _magento_model = 'catalog_product'
+    _magento2_model = 'products'
+    _magento2_search = 'products'
+    _magento2_key = 'sku'
     _admin_path = '/{model}/edit/id/{id}'
 
     def _call(self, method, arguments):
@@ -231,6 +234,8 @@ class ProductProductAdapter(GenericAdapter):
         if to_date is not None:
             filters.setdefault('updated_at', {})
             filters['updated_at']['to'] = to_date.strftime(dt_fmt)
+        if self.magento.version == '2.0':
+            return super(ProductProductAdapter, self).search(filters=filters)
         # TODO add a search entry point on the Magento API
         return [int(row['product_id']) for row
                 in self._call('%s.list' % self._magento_model,
@@ -241,6 +246,14 @@ class ProductProductAdapter(GenericAdapter):
 
         :rtype: dict
         """
+        if self.magento.version == '2.0':
+            # TODO: storeview context in Magento 2.0
+            res = super(ProductProductAdapter, self).read(
+                id, attributes=attributes)
+            if res:
+                for attr in res.get('custom_attributes', []):
+                    res[attr['attribute_code']] = attr['value']
+            return res
         return self._call('ol_catalog_product.info',
                           [int(id), storeview_id, attributes, 'id'])
 
@@ -248,17 +261,25 @@ class ProductProductAdapter(GenericAdapter):
         """ Update records on the external system """
         # XXX actually only ol_catalog_product.update works
         # the PHP connector maybe breaks the catalog_product.update
+        if self.magento.version == '2.0':
+            raise NotImplementedError  # TODO
         return self._call('ol_catalog_product.update',
                           [int(id), data, storeview_id, 'id'])
 
     def get_images(self, id, storeview_id=None):
+        if self.magento.version == '2.0':
+            raise NotImplementedError  # TODO
         return self._call('product_media.list', [int(id), storeview_id, 'id'])
 
     def read_image(self, id, image_name, storeview_id=None):
+        if self.magento.version == '2.0':
+            raise NotImplementedError  # TODO
         return self._call('product_media.info',
                           [int(id), image_name, storeview_id, 'id'])
 
     def update_inventory(self, id, data):
+        if self.magento.version == '2.0':
+            raise NotImplementedError  # TODO
         # product_stock.update is too slow
         return self._call('oerp_cataloginventory_stock_item.update',
                           [int(id), data])
@@ -467,7 +488,7 @@ class ProductImportMapper(ImportMapper):
 
     @mapping
     def categories(self, record):
-        mag_categories = record['categories']
+        mag_categories = record.get('categories', record['category_ids'])
         binder = self.binder_for('magento.product.category')
 
         category_ids = []
@@ -510,6 +531,19 @@ class ProductImportMapper(ImportMapper):
             return bundle_mapper.map_record(record).values(**self.options)
 
 
+@magento2000
+class ProductImportMapper2000(ProductImportMapper):
+
+    @mapping
+    def website_ids(self, record):
+        # https://github.com/magento/magento2/issues/3864
+        return {}
+
+    @mapping
+    def magento_id(self, record):
+        return {'magento_id': record['id']}
+
+
 @magento
 class ProductImporter(MagentoImporter):
     _model_name = ['magento.product.product']
@@ -528,7 +562,8 @@ class ProductImporter(MagentoImporter):
         """ Import the dependencies for the record"""
         record = self.magento_record
         # import related categories
-        for mag_category_id in record['categories']:
+        for mag_category_id in record.get(
+                'categories', record['category_ids']):
             self._import_dependency(mag_category_id,
                                     'magento.product.category')
         if record['type_id'] == 'bundle':
@@ -594,6 +629,13 @@ class ProductImporter(MagentoImporter):
 
 
 ProductImport = ProductImporter  # deprecated
+
+
+@magento2000
+class ProductImporter2000(ProductImporter):
+
+    def _get_binding(self):
+        return self.binder.to_openerp(self.magento_record['id'], browse=True)
 
 
 @magento

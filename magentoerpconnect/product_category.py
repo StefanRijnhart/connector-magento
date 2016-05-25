@@ -232,7 +232,7 @@ ProductCategoryBatchImport = ProductCategoryBatchImporter  # deprecated
 
 
 @magento2000
-class ProductCategoryBatchImporter(DirectBatchImporter):
+class ProductCategoryBatchImporter2000(DirectBatchImporter):
     """ Only a full tree of categories can be retrieved. """
     _model_name = ['magento.product.category']
 
@@ -323,7 +323,7 @@ class ProductCategoryImportMapper(ImportMapper):
 
 
 @magento2000
-class ProductCategoryImportMapper(ProductCategoryImportMapper):
+class ProductCategoryImportMapper2000(ProductCategoryImportMapper):
 
     @mapping
     def magento_id(self, record):

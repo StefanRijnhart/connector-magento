@@ -114,7 +114,7 @@ class PartnerCategoryImportMapper(ImportMapper):
 
 
 @magento2000
-class PartnerCategoryImportMapper(PartnerCategoryImportMapper):
+class PartnerCategoryImportMapper2000(PartnerCategoryImportMapper):
     _model_name = 'magento.res.partner.category'
 
     direct = [
