@@ -21,7 +21,7 @@
 ##############################################################################
 
 import logging
-import urllib2
+import requests
 import base64
 import xmlrpclib
 import sys
@@ -358,26 +358,24 @@ class CatalogImageImporter(Importer):
 
     def _get_binary_image(self, image_data):
         url = image_data['url'].encode('utf8')
-        try:
-            request = urllib2.Request(url)
-            if self.backend_record.auth_basic_username \
-                    and self.backend_record.auth_basic_password:
-                base64string = base64.b64encode(
-                    '%s:%s' % (self.backend_record.auth_basic_username,
-                               self.backend_record.auth_basic_password))
-                request.add_header("Authorization", "Basic %s" % base64string)
-            binary = urllib2.urlopen(request)
-        except urllib2.HTTPError as err:
-            if err.code == 404:
-                # the image is just missing, we skip it
-                return
-            else:
-                # we don't know why we couldn't download the image
-                # so we propagate the error, the import will fail
-                # and we have to check why it couldn't be accessed
-                raise
+        headers = {}
+        if (self.backend_record.auth_basic_username and
+                self.backend_record.auth_basic_password):
+            base64string = base64.b64encode(
+                '%s:%s' % (self.backend_record.auth_basic_username,
+                           self.backend_record.auth_basic_password))
+            headers['Authorization'] = "Basic %s" % base64string
+        # TODO: make verification of ssl a backend setting
+        request = requests.get(url, headers=headers, verify=False)
+        if request.status_code == 404:
+            # the image is just missing, we skip it
+            return
         else:
-            return binary.read()
+            # we don't know why we couldn't download the image
+            # so we propagate the error, the import will fail
+            # and we have to check why it couldn't be accessed
+            request.raise_for_status()
+        return request.content
 
     def _write_image_data(self, binding_id, binary, image_data):
         model = self.model.with_context(connector_no_export=True)
