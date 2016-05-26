@@ -398,6 +398,20 @@ class CatalogImageImporter(Importer):
         self._write_image_data(binding_id, binary, image_data)
 
 
+@magento2000
+class CatalogImageImporter2000(CatalogImageImporter):
+
+    def _get_binary_image(self, image_data):
+        if 'magento.product.product' in self._model_name:
+            model = 'product'
+        else:
+            raise NotImplementedError  # Categories?
+        image_data['url'] = '%s/media/catalog/%s/%s' % (
+            self.backend_record.location, model, image_data['file'])
+        return super(CatalogImageImporter2000, self)._get_binary_image(
+            image_data)
+
+
 @magento
 class BundleImporter(Importer):
     """ Can be inherited to change the way the bundle products are
@@ -646,6 +660,15 @@ class ProductImporter2000(ProductImporter):
 
     def _get_binding(self):
         return self.binder.to_openerp(self.magento_record['id'], browse=True)
+
+    def _import_bundle_dependencies(self):
+        """ Import the dependencies for a Bundle """
+        for product_link in [
+                product_link for option in self.magento_record[
+                    'extension_attributes']['bundle_product_options']
+                for product_link in option['product_links']]:
+            self._import_dependency(product_link['sku'],
+                                    'magento.product.product')
 
 
 @magento
