@@ -482,6 +482,7 @@ class ProductImportMapper(ImportMapper):
 
     @mapping
     def is_active(self, record):
+        # TODO: products are imported as inactive (templates are active though)
         mapper = self.unit_for(IsActiveProductImportMapper)
         return mapper.map_record(record).values(**self.options)
 
@@ -685,9 +686,9 @@ class IsActiveProductImportMapper(ImportMapper):
     @mapping
     def is_active(self, record):
         """Check if the product is active in Magento
-        and set active flag in OpenERP
-        status == 1 in Magento means active"""
-        return {'active': (record.get('status') == '1')}
+        and set active flag in Odoo. Status == 1 in Magento means active.
+        2.0 REST API returns an integer, 1.x a string. """
+        return {'active': (record.get('status') in ('1', 1))}
 
 
 @magento
