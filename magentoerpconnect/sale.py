@@ -47,7 +47,7 @@ from .unit.import_synchronizer import (DelayedBatchImporter,
                                        )
 from .unit.mapper import normalize_datetime
 from .exception import OrderImportRuleRetry
-from .backend import magento
+from .backend import magento, magento1700, magento2000
 from .connector import get_environment
 from .partner import PartnerImportMapper
 
@@ -270,6 +270,10 @@ class SaleOrderLine(models.Model):
 class SaleOrderAdapter(GenericAdapter):
     _model_name = 'magento.sale.order'
     _magento_model = 'sales_order'
+    _magento2_model = 'orders'
+    _magento2_search = 'orders'
+    _magento2_key = 'entity_id'
+
     _admin_path = '{model}/view/order_id/{id}'
 
     def _call(self, method, arguments):
@@ -282,6 +286,13 @@ class SaleOrderAdapter(GenericAdapter):
                 raise IDMissingInBackend
             else:
                 raise
+
+    def get_search_arguments(self, filters):
+        return {
+            'imported': False,
+            # 'limit': 200,
+            'filters': filters,
+        }
 
     def search(self, filters=None, from_date=None, to_date=None,
                magento_storeview_ids=None):
@@ -302,11 +313,19 @@ class SaleOrderAdapter(GenericAdapter):
         if magento_storeview_ids is not None:
             filters['store_id'] = {'in': magento_storeview_ids}
 
-        arguments = {'imported': False,
-                     # 'limit': 200,
-                     'filters': filters,
-                     }
+        arguments = self.get_search_arguments(filters)
         return super(SaleOrderAdapter, self).search(arguments)
+
+    def get_parent(self, id):
+        return self._call('%s.get_parent' % self._magento_model, [id])
+
+    def add_comment(self, id, status, comment=None, notify=False):
+        return self._call('%s.addComment' % self._magento_model,
+                          [id, status, comment, notify])
+
+
+@magento1700
+class SaleOrderAdapter1700(SaleOrderAdapter):
 
     def read(self, id, attributes=None):
         """ Returns the information of a record
@@ -317,12 +336,21 @@ class SaleOrderAdapter(GenericAdapter):
                             [id, attributes])
         return record
 
-    def get_parent(self, id):
-        return self._call('%s.get_parent' % self._magento_model, [id])
 
-    def add_comment(self, id, status, comment=None, notify=False):
-        return self._call('%s.addComment' % self._magento_model,
-                          [id, status, comment, notify])
+@magento2000
+class SaleOrderAdapter2000(SaleOrderAdapter):
+
+    def get_search_arguments(self, filters):
+        return filters
+
+    def read(self, id, attributes=None):
+        """ Returns the information of a record
+
+        :rtype: dict
+        """
+        res = super(SaleOrderAdapter, self).read(
+            id, attributes=attributes)
+        return res
 
 
 @magento
