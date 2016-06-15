@@ -82,11 +82,12 @@ class MagentoBackend(models.Model):
     )
     username = fields.Char(
         string='Username',
-        help="Webservice user",
+        help="Webservice user (leave empty for Magento 2.0)",
     )
     password = fields.Char(
         string='Password',
-        help="Webservice password",
+        help=("Webservice password, or authentication token when connecting to"
+              " Magento 2.0"),
     )
     use_auth_basic = fields.Boolean(
         string='Use HTTP Auth Basic',
