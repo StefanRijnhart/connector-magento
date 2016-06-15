@@ -79,12 +79,13 @@ def output_recorder(filename):
 class MagentoLocation(object):
 
     def __init__(self, location, username, password, version,
-                 use_custom_api_path=False):
+                 use_custom_api_path=False, verify_ssl=True):
         self._location = location
         self.username = username
         self.password = password
         self.use_custom_api_path = use_custom_api_path
         self.version = version
+        self.verify_ssl = verify_ssl
 
         self.use_auth_basic = False
         self.auth_basic_username = None
@@ -118,7 +119,8 @@ class MagentoCRUDAdapter(CRUDAdapter):
             backend.username,
             backend.password,
             backend.version,
-            use_custom_api_path=backend.use_custom_api_path)
+            use_custom_api_path=backend.use_custom_api_path,
+            verify_ssl=backend.verify_ssl)
         if backend.use_auth_basic:
             magento.use_auth_basic = True
             magento.auth_basic_username = backend.auth_basic_username
@@ -160,7 +162,8 @@ class MagentoCRUDAdapter(CRUDAdapter):
                                 self.magento.username,
                                 self.magento.password,
                                 protocol=protocol,
-                                full_url=custom_url) as api:
+                                full_url=custom_url,
+                                verify_ssl=self.magento.verify_ssl) as api:
                 # When Magento is installed on PHP 5.4+, the API
                 # may return garble data if the arguments contain
                 # trailing None.

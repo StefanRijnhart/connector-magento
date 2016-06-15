@@ -89,6 +89,10 @@ class MagentoBackend(models.Model):
         help=("Webservice password, or authentication token when connecting to"
               " Magento 2.0"),
     )
+    verify_ssl = fields.Boolean(
+        string="Verify SSL certficate",
+        default=True,
+        help=("Only for Magento 2 REST API"))
     use_auth_basic = fields.Boolean(
         string='Use HTTP Auth Basic',
         help="Use a Basic Access Authentication for the API. "

@@ -366,7 +366,8 @@ class CatalogImageImporter(Importer):
                            self.backend_record.auth_basic_password))
             headers['Authorization'] = "Basic %s" % base64string
         # TODO: make verification of ssl a backend setting
-        request = requests.get(url, headers=headers, verify=False)
+        request = requests.get(url, headers=headers,
+                               verify=self.backend_record.verify_ssl)
         if request.status_code == 404:
             # the image is just missing, we skip it
             return
