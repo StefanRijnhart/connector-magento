@@ -720,6 +720,8 @@ class SaleOrderImporter(MagentoImporter):
             for field in ['sku', 'product_id', 'name']:
                 item[field] = child_items[0][field]
             return item
+        elif product_type == 'bundle':
+            return child_items
         return top_item
 
     def _import_customer_group(self, group_id):
