@@ -854,7 +854,7 @@ class SaleOrderImporter(MagentoImporter):
 
             customer_record = {
                 'firstname': address['firstname'],
-                'middlename': address['middlename'],
+                'middlename': address.get('middlename'),
                 'lastname': address['lastname'],
                 'prefix': address.get('prefix'),
                 'suffix': address.get('suffix'),
