@@ -674,6 +674,9 @@ class SaleOrderImporter(MagentoImporter):
         for item in resource['items']:
             if item.get('parent_item_id'):
                 child_items.setdefault(item['parent_item_id'], []).append(item)
+            elif item.get('parent_item'):  # 2.0
+                child_items.setdefault(
+                    item['parent_item']['item_id'], []).append(item)
             else:
                 top_items.append(item)
 
