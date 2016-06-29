@@ -287,10 +287,16 @@ class GenericAdapter(MagentoCRUDAdapter):
         :rtype: dict
         """
         if self.magento.version == '2.0':
+
+            def escape(term):
+                if isinstance(term, basestring):
+                    return term.replace('+', '%2B')
+                return term
+
             if attributes:
                 raise NotImplementedError
             if self._magento2_key:
-                return self._call('%s/%s' % (self._magento2_model, id),
+                return self._call('%s/%s' % (self._magento2_model, escape(id)),
                                   attributes)
             else:
                 res = self._call(self._magento2_model)
