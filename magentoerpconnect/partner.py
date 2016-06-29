@@ -270,13 +270,17 @@ class PartnerImportMapper(ImportMapper):
     @mapping
     def customer_group_id(self, record):
         # import customer groups
-        binder = self.binder_for(model='magento.res.partner.category')
-        category_id = binder.to_openerp(record['group_id'], unwrap=True)
+        if record['group_id'] == 0:
+            category_id = self.env.ref(
+                'magentoerpconnect.category_no_account').id
+        else:
+            binder = self.binder_for(model='magento.res.partner.category')
+            category_id = binder.to_openerp(record['group_id'], unwrap=True)
 
-        if category_id is None:
-            raise MappingError("The partner category with "
-                               "magento id %s does not exist" %
-                               record['group_id'])
+            if category_id is None:
+                raise MappingError("The partner category with "
+                                   "magento id %s does not exist" %
+                                   record['group_id'])
 
         # FIXME: should remove the previous tag (all the other tags from
         # the same backend)
