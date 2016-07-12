@@ -574,7 +574,7 @@ class ProductImportMapper2000(ProductImportMapper):
 
     @mapping
     def magento_id(self, record):
-        return {'magento_id': record['id']}
+        return {'magento_id': record['sku']}
 
 
 @magento
@@ -669,7 +669,7 @@ ProductImport = ProductImporter  # deprecated
 class ProductImporter2000(ProductImporter):
 
     def _get_binding(self):
-        return self.binder.to_openerp(self.magento_record['id'], browse=True)
+        return self.binder.to_openerp(self.magento_record['sku'], browse=True)
 
     def _import_bundle_dependencies(self):
         """ Import the dependencies for a Bundle """
