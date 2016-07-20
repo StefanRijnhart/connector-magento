@@ -139,6 +139,8 @@ class SaleOrder(models.Model):
                 if old_state == 'cancel':
                     continue  # skip if already canceled
                 for binding in order.magento_bind_ids:
+                    if binding.backend_id.version == '2.0':
+                        continue  # TODO
                     export_state_change.delay(
                         session,
                         'magento.sale.order',
