@@ -165,6 +165,8 @@ class SaleOrder(models.Model):
         session = ConnectorSession(self.env.cr, self.env.uid,
                                    context=self.env.context)
         for binding in bindings:
+            if binding.backend_id.version == '2.0':
+                continue  # TODO
             # the sales' status on Magento is likely 'canceled'
             # so we will export the new status (pending, processing, ...)
             export_state_change.delay(
